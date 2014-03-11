@@ -1,0 +1,55 @@
+  _ \      |          _)                   ___ /a.a. 2012/2013
+ |   | _ \ |  _` |_  / |  _ \  __ \   _ \    _ \ 
+ __ <  __/ | (   |  /  | (   | |   |  __/     ) |
+_| \_\___|_|\__,_|___|_|\___/ _|  _|\___|  ____/ 
+
+    \             _)                                       |  
+   _ \    __|  __| |  _` | __ \   _ \ __ `__ \   _ \ __ \  __|
+  ___ \ \__ \\__ \ | (   | |   |  __/ |   |   |  __/ |   | |  
+_/    _\____/____/_|\__, |_|  _|\___|_|  _|  _|\___|_|  _|\__|
+                    |___/    
+
+
+ _____     _                                  _ _                       _ _            _ _ 
+|   | |___| |_ ___    ___ ___ ___ ___ ___ ___| |_|   ___    ___ ___ ___| | |_ ___    _| |_|
+| | | | . |  _| -_|  | . | -_|   | -_|  _| .'| | |  | -_|  |_ -|  _| -_| |  _| -_|  | . | |
+|_|___|___|_| |___|  |_  |___|_|_|___|_| |__,|_|_|  |___|  |___|___|___|_|_| |___|  |___|_|
+                     |___|                                                                 
+                     _   _       
+ ___ ___ ___ ___ ___| |_| |_ ___ 
+| . |  _| . | . | -_|  _|  _| . |
+|  _|_| |___|_  |___|_| |_| |___|
+|_|         |___|                
+Per affrontare il problema ho eseguito una strategia bottom-up, creando prima il sistema di connessione client/server attraverso i socket. In seguito la gestione di più client contemporaneamente, il sistema di comunicazione e infine la gestione dei segnali per la chiusura pulita di tutte le istanze del server.
+Per semplificare tutto il progetto ho implementato la libreria libClientServer.h, con all’interno le costanti che servono al client e al server e le varie librerie esterne.
+
+ _____         _             _____         _       _   
+|   __|___ ___| |_    ___   |   __|___ ___| |_ ___| |_ 
+|   __| . |  _| '_|  | -_|  |__   | . |  _| '_| -_|  _|
+|__|  |___|_| |_,_|  |___|  |_____|___|___|_,_|___|_|  
+Per la gestione di più client contemporaneamente ho deciso di utilizzare le fork.
+Il server crea il socket attraverso le system call socket() e bind().
+Resta in ascolto sulla porta tramite la system call listen(). Ogni volta che il client tenta una connessione su questa porta, il server attraverso la system call accept() riceve l’identificatore del socket del client. A questo punto il server fa una fork e il figlio inizia la comunicazione con il client. Il server padre ritorna a eseguire la accept() aspettando nuovi client e ripetendo le stesse operazioni in modo tale da permettere la comunicazione con più client.                                             
+
+ _____ _     _                      _ _                          _             _             
+|   __|_|___| |_ ___ _____ ___    _| |_|   ___ ___ _____ _ _ ___|_|___ ___ ___|_|___ ___ ___ 
+|__   | |_ -|  _| -_|     | .'|  | . | |  |  _| . |     | | |   | |  _| .'|- _| | . |   | -_|
+|_____|_|___|_| |___|_|_|_|__,|  |___|_|  |___|___|_|_|_|___|_|_|_|___|__,|___|_|___|_|_|___|
+Una volta creato il canale di comunicazione, attraverso il socket, di un server figlio con un client avviene la comunicazione vera e propria attraverso le system call send() e la recv().
+Come proponeva l’esercizio, il client invia un pathname e il server risponde con le specifiche del file se esiste e in caso contrario con la stringa ”il file non esiste”. Per le comunicazioni vengono usati dei buffer di stringhe di lunghezza definita all’interno della libreria.
+Per trovare le informazioni del file o della cartella il server figlio esegue la system call stat(), se questa restituisce -1 e l’errore è ENOENT il file non esiste, mentre se esiste tutte le proprietà vengono salvate in una struttura. A questo punto il server crea una stringa formattata già nel modo corretto con tutte le informazioni e la invia. Il client la riceve e la stampa direttamente a schermo.
+
+ _____                 _ _ 
+|   __|___ ___ ___ ___| |_|
+|__   | -_| . |   | .'| | |
+|_____|___|_  |_|_|__,|_|_|
+          |___|            
+Per la terminazione pulita del server i processi hanno bisogno di due segnali, il primo gestito dalla funzione terminaPadre() e il secondo dalla funzione terminaServer(). Per mandare i due diversi segnali ho assegnato al padre e ai figli gruppi diversi ed usato la system call killpg() in grado di inviarli a un intero gruppo.
+In questo modo posso inviare il segnale 30 solo al padre e il 31 ai figli server.
+
+ _____ _   _                          _     _ _                                    _             
+|     | |_|_|_ _ ___ _ _ ___ ___    _| |___| | |___    ___ ___ ___ ___ ___ ___ ___|_|___ ___ ___ 
+|   --|   | | | |_ -| | |  _| .'|  | . | -_| | | .'|  |  _| . |   |   | -_|_ -|_ -| | . |   | -_|
+|_____|_|_|_|___|___|___|_| |__,|  |___|___|_|_|__,|  |___|___|_|_|_|_|___|___|___|_|___|_|_|___|
+La comunicazione client e server figlio termina quando il client invia il carattere 'q', in questo modo il client chiude il socket, il che provoca una errore nella recv() del server, che esce dal ciclo e chiude la connessione.
+Se invece il client invia al Server figlio la stringa “+FINE+”,  avviene una chiusura pulita di tutto il server. In questo caso il server figlio che riceve questa stringa invia i segnali al padre e agli altri figli. Nella funzione terminaPadre che viene così eseguita il padre si mette in wait() aspettando la terminazione dei figli, mentre nella procedura terminaServer() i figli chiudono la connessione con il client e terminano.

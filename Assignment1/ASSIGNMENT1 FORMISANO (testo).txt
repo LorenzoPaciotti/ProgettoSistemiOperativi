@@ -1,0 +1,59 @@
+ASSIGNMENT 1:
+--------------
+
+SCADENZA DELLA CONSEGNA:
+      Consegnare via email (vedi dopo) ENTRO il 10 novembre 2012
+
+MODALITA` DI CONSEGNA:
+      La consegna deve avvenire spedendo un archivio compresso. Se il vostro numero di matricola
+      e` 123456 allora l'archivio si avra`  nome 123456.tgz (ottenuto con
+      i comandi tar e gzip) e conterra` una directory di nome 123456.
+      La directory 123456 deve contenere:
+
+    * Un file di testo avente nome 123456.txt in cui siano indicati nome, cognome, matricola dello studente.
+    * Il/i file con il codice, debitamente commentato, della soluzione dell'esercizio.
+      Ogni script bash realizzato deve essere descritto da commenti (poche righe).
+
+
+TESTO DELL'ESERCIZIO:
+        Si realizzi uno script bash che implementi una versione testuale del seguente gioco.
+        Il gioco si svolge cosi`:
+        Una volta lanciato il comando, questo seleziona una riga da un file di testo
+        (il pathname del file viene fornito come parametro del comando).
+        Ogni riga del file deve contenere tre informazioni: una domanda, la risposta ed in numero
+        massimo di errori N ammessi per quella specifica domanda.
+        Si assuma che la risposta sia sempre composta da una unica parola.
+        Fatto questo, lo script scrive la domanda in modo che l'utente possa leggerla.
+        Poi attende che l'utente digiti una risposta. Se la risposta e` corretta, allora
+        ci si congratula. Se la risposta e` sbagliata si comunica che c'e` stato un errore,
+        il numero di errori che possono ancora essere commessi viene decrementato, e lo script
+        ripresenta la stessa domanda attendendo un'altra risposta.
+        
+        L'utente vince se fornisce la risposta corretta entro N tentativi, altrimenti perde.
+        
+        Il file usato come argomento deve essere un file di testo generato a priori. Il suo contenuto
+        puo` essere organizzato come preferite. [SUGG.: separate domanda, risposta e numero con un 
+        carattere "speciale" (ad esempio '/')]
+       
+        Una volta terminato un gioco, lo script chiede se si vuole giocare ancora. In caso
+        affermativo tutto si ripete (ma ovviamente selezionando una riga diversa da quelle gia` usate).
+
+        Lo script dovrebbe controllare se la risposta data dall'utente coincida con quella corretta.
+        Potete gestire come preferite, distinguendole o accomunandole, le maiuscole e le minuscole.
+
+
+
+In caso di aspetti non specificati nel testo dell'esercizio o in ogni caso in cui si possano
+configurare diverse scelte alternative nella progettazione della soluzione, effettuate voi
+le scelte che vi sembrano piu` ragionevoli (giustificandole opportunamente nei commenti al codice). 
+
+Tutti i comandi necessari per risolvere l'esercizio sono descritti nelle dispense distribuite
+a lezione. Tuttavia e` consentito studiare ed utilizzare altri comandi bash.
+
+SI RICORDA CHE:
+La consegna della soluzione di questo esercizio e' necessaria per poter sostenere la
+prova d'esame.
+La valutazione terra' conto della correttezza e della completezza della soluzione rispetto ai
+requisiti richiesti.
+
+

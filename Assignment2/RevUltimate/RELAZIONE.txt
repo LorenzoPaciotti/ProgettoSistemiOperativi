@@ -1,0 +1,146 @@
+Relazione sullo svolgimento dell'assignment 2,  A.A. 2012/13
+
+NOTE GENERALI e SCELTE DI PROGETTO
+Per affrontare il problema ho scelto di intraprendere una strategia mista bottom-up/top-down, a partire dalla scrittura della pseudocodifica 
+che dava una visione generale della soluzione del problema, la prima azione è stata il suddividere la struttura in moduli principali. 
+In particolare il file 'benzinaio.c' con il codice eseguito dai benzinai, e il file 'macchina.c' con il codice delle auto.
+Pe la gestione della comunicazione e della sincronizzazione utilizzo i semafori, le code di messaggi e la memoria condivisa, 
+attraverso il file 'sem_mem.c'. Questo gestisce la creazione e l'inizializzazione di queste strutture.
+
+Una volta terminata la parte relativa alla gestione del comportamento di benzinai e auto, ho creato il file 'starter.c' che si occupa di eseguire 
+gli altri file in modo sequenziale. Per risolvere questo problema ho deciso di creare un unico eseguibile che genera tre figli e gli fa eseguire 
+i vari codici, gestendo possibili errori. 
+
+Per migliorare la compattezza del codice ho deciso di implementare la libreria con il file 'tutto.h' e 'tutto.c'. Questo mi permette di definire 
+una sola volta le funzioni che servono a tutti gli eseguibili, le costanti delle chiavi per le strutture dati e includere le librerie di sistema
+indispensabili per l'esecuzione del programma.
+
+Infine ho creato il makefile per compilare tutti i file '.h' e '.c' nel modo corretto. In particolare questo prima crea la cartella 'bin', poi crea 
+il file oggetto '.o' del file 'tutto.c' che deve essere linkato con tutti gli altri quattro eseguibili, evitando di ricompilarlo più volte. 
+Dopo di che crea gli eseguibili 'sem_mem' 'benzinaio' 'macchina' e li mette nella cartella 'bin', mentre il file 'starter' viene messo nella stessa
+cartella del makefile, per facilitare l'avvio.
+
+
+FORK E GESTIONE DEI PROCESSI
+Per quanto riguarda la ramificazione nella creazioni dei processi, inizialmente il processo 'starter' crea un figlio che esegue il codice 'sem_mem' 
+per l'inizializzazione delle strutture. Se tutto va a buon fine viene creato un altro figlio che fa eseguire il codice 'benzinaio' e un terzo figlio
+per il codice 'auto'.
+A sua volta il processo benzinaio crea un figlio ed entrambi andranno a gestire una pompa. Alla fine del suo codice il padre aspetta la terminazione
+del figlio gestendo i suoi errori.
+Per quanto riguarda il processo auto questo crea n figli impostabili attraverso una costante nel file 'tutto.h', il padre di questi processi 
+non diventa una macchina, ma aspetta la terminazione di tutte le auto figlie gestendo gli eventuali errori di ritorno di una di queste.
+Il processo starter aspetta la terminazione del processo benzinaio e di quello auto, gestisce i loro errori e poi rimuove tutte le strutture dati 
+e termina.
+
+
+PSEUDOCODICE
+
+memoria condivisa:
+boolean pompa1 = TRUE
+int numeroAuto = N
+boolean finegiornata = FALSE
+int cassa = 0
+
+semafori:
+SEM_STAZIONE = 2
+SEM_POMPA1 = 0
+SEM_POMPA2 = 0
+SEM_PIENOFATTO1 = 0
+SEM_PIENOFATTO2 = 0
+SEM_SOLDIINVIATI1 = 0
+SEM_SOLDIINVIATI2 = 0
+SEM_VATTENE1 = 0
+SEM_VATTENE2 = 0
+SEM_MUTEXCASSA = 1
+SEM_POMPA1LIBERA = 1
+SEM_NUMEROMACCHINE = 1
+
+code:
+CODA_MESS1
+CODA_MESS2 
+
+
+Macchine{
+	wait(SEM_STAZIONE)
+
+	wait(SEM_POMPA1LIBERA)
+	if(pompa1 == TRUE){
+		pompa1 = FALSE
+		p=1
+	}
+	signal(SEM_POMPA1LIBERA)
+
+	if(p == 1){
+		signal(SEM_POMPA1)
+		---- ricevo benzina ----
+		wait(SEM_PIENOFATTO1)
+		---- ricevo importo da pagare ----
+		---- invio soldi da pagare ----
+		signal(SEM_SOLDIINVIATI1)
+		wait(SEM_VATTENE1)
+		wait(SEM_POMPA1LIBERA)
+		pompa1 = TRUE
+		signal(SEM_POMPA1LIBERA)
+	}else{	
+		signal(SEM_POMPA2)
+		---- ricevo benzina ----
+		wait(SEM_PIENOFATTO2)
+		---- ricevo importo da pagare ----
+		---- invio soldi da pagare ----
+		signal(SEM_SOLDIINVIATI2)
+		wait(SEM_VATTENE2)
+	}
+}
+
+Benzinaio{
+
+	wait(SEM_NUMEROMACCHINE)
+
+	while( numeroAuto > 0){
+		signal(SEM_NUMEROMACCHINE)
+		wait(idSemPompa_i)
+		
+		if(fineGiornata == TRUE){
+			break
+		}else{
+			---- metto benzina ----
+			---- invio importo da pagare ----
+			signal(idSemPienoFatto_i)
+			wait(idSemSoldiInviati_i)
+			soldi = ---- ricevo soldi ----
+			signal(idSemVattene_i)
+			
+			wait(SEM_MUTEXCASSA)
+			cassa = cassa + soldi
+			signal(SEM_MUTEXCASSA)
+		
+			wait(SEM_NUMEROMACCHINE)
+			numeroAuto  =  numeroAuto -1
+		}
+	}
+	signal(SEM_NUMEROMACCHINE)
+	signal(idSemPompa_j)
+	fineGiornata = TRUE
+
+	wait(SEM_MUTEXCASSA)
+	paga = cassa / 2
+	signal(SEM_MUTEXCASSA)
+}
+
+
+STRUTTURA SPECIFICA 
+La struttura dell'applicativo consta di alcuni file eseguibili che sono preposti a gestire alcuni aspetti specifici del problema.
+
+MAKEFILE: contiene le specifiche per la compilazione dei sottostanti file.
+
+STARTER.c: gestisce l'avvio e la terminazione di tutti i processi che compongono il programma.
+
+TUTTO.c: contiene le funzioni utili a tutti i processi.
+
+TUTTO.h: contiene i prototipi delle funzioni comuni, le costanti e le altre librerie.
+
+SEM_MEM.c: crea e inizializza i semafori, la memoria condivisa e le code dei messaggi. 
+
+MACCHINA.c: crea i processi macchina e contiene il relativo codice dei processi.
+
+BENZINAIO.c: crea i processi benzinaio e contiene relativo codice dei processi.
